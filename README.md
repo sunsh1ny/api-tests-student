@@ -9,7 +9,8 @@
 
 ## Запуск тестов
 
-1. Установите любое IDE для разработки: [Jetbrains GoLand](https://www.jetbrains.com/ru-ru/go/) (Платное или по студенческой лицензии), [VS Code](https://code.visualstudio.com/) (бесплатное).
+1. Установите любое IDE для разработки: [Jetbrains GoLand](https://www.jetbrains.com/ru-ru/go/) (Платное или по
+   студенческой лицензии), [VS Code](https://code.visualstudio.com/) (бесплатное).
 2. Установите [Git](https://git-scm.com/install/) на компьютер
 3. [Установите](https://go.dev/doc/install) Go версии 1.25.1
 4. [Настройте](https://docs.github.com/ru/authentication/connecting-to-github-with-ssh) доступ к своему Github-аккаунту
