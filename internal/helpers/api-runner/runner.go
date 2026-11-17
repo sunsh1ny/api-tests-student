@@ -6,13 +6,22 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"sync"
+	"time"
 
 	"github.com/steinfletcher/apitest"
 )
 
 const (
 	defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+	requestTimeout   = 20 * time.Second
+	requestInterval  = 150 * time.Millisecond
 )
+
+var requestSlots struct {
+	sync.Mutex
+	last time.Time
+}
 
 type ApiTest struct {
 	token     string
@@ -38,12 +47,13 @@ func (at *ApiTest) Auth(token string) *ApiTest {
 }
 
 func (at *ApiTest) Create() *apitest.APITest {
-	apitestNew := apitest.New().EnableNetworking()
+	apitestNew := apitest.New().EnableNetworking(&http.Client{Timeout: requestTimeout})
 	if os.Getenv("DEBUG") == "true" {
 		apitestNew = apitestNew.Debug()
 	}
 	return apitestNew.
 		Intercept(func(request *http.Request) {
+			waitForRequestSlot()
 			request.Header.Set("User-Agent", at.userAgent)
 
 			if err := mergeServiceUrls(at.host, request.URL); err != nil {
@@ -54,6 +64,16 @@ func (at *ApiTest) Create() *apitest.APITest {
 				request.Header.Add("Authorization", "Bearer "+at.token)
 			}
 		})
+}
+
+// waitForRequestSlot разносит запросы по времени, чтобы не упираться в лимит nginx стенда.
+func waitForRequestSlot() {
+	requestSlots.Lock()
+	defer requestSlots.Unlock()
+	if remaining := requestInterval - time.Since(requestSlots.last); remaining > 0 {
+		time.Sleep(remaining)
+	}
+	requestSlots.last = time.Now()
 }
 
 func mergeServiceUrls(host string, r *url.URL) error {
